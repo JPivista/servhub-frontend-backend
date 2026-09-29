@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 import { api, getToken, setToken } from "../services/api";
 import { clearJson, loadJson, saveJson } from "../services/storage";
 import { setDirectory } from "./directorySlice";
+import { setMaterialRequests, setSuppliers } from "./workflowSlice";
 
 const STORAGE_KEY = "servhub_auth_v4";
 
@@ -72,6 +73,21 @@ function applyDirectory(dispatch, directory) {
   if (directory) dispatch(setDirectory(directory));
 }
 
+export const signOut = () => (dispatch) => {
+  dispatch(logout());
+  dispatch(
+    setDirectory({
+      users: [],
+      roles: [],
+      departments: [],
+      rolePrivileges: {},
+      departmentPrivileges: {},
+    })
+  );
+  dispatch(setMaterialRequests([]));
+  dispatch(setSuppliers([]));
+};
+
 export const login = ({ email, password }) => async (dispatch) => {
   dispatch(sessionStart());
   try {
@@ -91,7 +107,7 @@ export const restoreSession = () => async (dispatch) => {
     dispatch(loginSuccess(data));
     applyDirectory(dispatch, data.directory);
   } catch {
-    dispatch(logout());
+    dispatch(signOut());
   }
 };
 
@@ -102,7 +118,7 @@ export const syncCurrentUser = () => async (dispatch) => {
     dispatch(loginSuccess(data));
     applyDirectory(dispatch, data.directory);
   } catch {
-    dispatch(logout());
+    dispatch(signOut());
   }
 };
 

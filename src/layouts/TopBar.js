@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { logout } from "../store/authSlice";
+import { signOut } from "../store/authSlice";
 import { flattenNavItems, getNavItems } from "../constants/nav";
 import { icons } from "../components/icons";
 import { formatDateLabel, formatTimeLabel, greetingForNow } from "../utils/greeting";
@@ -10,10 +10,7 @@ import { userEditHref } from "../features/users/userRoutes";
 import { saveSettings } from "../store/directorySlice";
 import { api } from "../services/api";
 
-const demoNotifications = [
-  { id: 1, title: "Material request update", body: "Your MR status changes will appear here." },
-  { id: 2, title: "Attendance", body: "Attendance module is coming soon." },
-];
+const demoNotifications = [];
 
 const THEME_OPTIONS = [
   { id: "day", icon: "sun", label: "Day" },
@@ -176,7 +173,7 @@ export default function TopBar({ onMenu, navOpen, navVisible, onToggleNav }) {
     } catch {
       // ignore network errors on logout audit
     }
-    dispatch(logout());
+    dispatch(signOut());
     navigate("/login");
   };
 
@@ -310,12 +307,16 @@ export default function TopBar({ onMenu, navOpen, navVisible, onToggleNav }) {
               <div className="border-b border-[rgba(15,42,68,0.08)] px-4 py-3">
                 <p className="text-sm font-semibold text-brand-navy">Notifications</p>
               </div>
-              {demoNotifications.map((item) => (
-                <div key={item.id} className="border-b border-[rgba(15,42,68,0.06)] px-4 py-3 last:border-0">
-                  <p className="text-sm font-medium text-brand-navy">{item.title}</p>
-                  <p className="mt-0.5 text-xs text-brand-navy/55">{item.body}</p>
-                </div>
-              ))}
+              {demoNotifications.length ? (
+                demoNotifications.map((item) => (
+                  <div key={item.id} className="border-b border-[rgba(15,42,68,0.06)] px-4 py-3 last:border-0">
+                    <p className="text-sm font-medium text-brand-navy">{item.title}</p>
+                    <p className="mt-0.5 text-xs text-brand-navy/55">{item.body}</p>
+                  </div>
+                ))
+              ) : (
+                <p className="px-4 py-3 text-sm text-brand-navy/55">No notifications from the server.</p>
+              )}
             </div>
           ) : null}
 

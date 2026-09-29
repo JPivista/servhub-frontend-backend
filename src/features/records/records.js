@@ -98,36 +98,14 @@ export const recordModules = {
 };
 
 export const defaultCollections = {
-  departments: [
-    { id: 1, name: "Procurement", lead: "ERP Admin" },
-    { id: 2, name: "Development", lead: "Development Team Lead" },
-  ],
-  requests: [
-    { id: 1, title: "Office chairs", department: "Procurement", status: "Pending" },
-    { id: 2, title: "Laptop refresh", department: "Development", status: "Approved" },
-  ],
-  purchase: [
-    { id: 1, item: "A4 Paper", vendor: "OfficeMart", amount: "1200" },
-  ],
-  vendors: [
-    { id: 1, name: "OfficeMart", contact: "sales@officemart.com" },
-  ],
-  attendance: [
-    { id: 1, name: "Normal User", date: "2026-09-16", status: "Present" },
-  ],
-  leave: [
-    { id: 1, name: "Normal User", days: "2", status: "Pending" },
-  ],
-  tasks: [
-    { id: 1, title: "Build login flow", assignee: "Development Team Lead", status: "Done" },
-  ],
-  testing: [
-    { id: 1, title: "Login privilege check", status: "Passed" },
-  ],
-  inventory: [
-    { id: 1, item: "HDMI cables", quantity: "40" },
-  ],
-  stock: [
-    { id: 1, item: "A4 Paper", quantity: "12 boxes" },
-  ],
+  departments: [],
+  requests: [],
+  purchase: [],
+  vendors: [],
+  attendance: [],
+  leave: [],
+  tasks: [],
+  testing: [],
+  inventory: [],
+  stock: [],
 };

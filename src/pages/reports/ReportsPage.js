@@ -1,16 +1,29 @@
-import { useSelector } from "react-redux";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 import GlassPanel, { PageIntro } from "../../components/ui/GlassPanel";
 import { primaryBtn } from "../../components/ui/formStyles";
 import { hasPrivilege } from "../../constants/privileges";
+import { api } from "../../services/api";
+import { refreshDirectory } from "../../store/authSlice";
+import { setMaterialRequests } from "../../store/workflowSlice";
 
 export default function Reports() {
+  const dispatch = useDispatch();
   const privileges = useSelector((state) => state.auth.privileges);
   const users = useSelector((state) => state.directory.users);
   const roles = useSelector((state) => state.directory.roles);
   const rolePrivileges = useSelector((state) => state.directory.rolePrivileges);
   const mrs = useSelector((state) => state.workflow.materialRequests);
   const canExport = hasPrivilege(privileges, "reports", "export");
+
+  useEffect(() => {
+    dispatch(refreshDirectory());
+    api
+      .get("/material-requests")
+      .then((response) => dispatch(setMaterialRequests(response.materialRequests || [])))
+      .catch(() => dispatch(setMaterialRequests([])));
+  }, [dispatch]);
 
   if (!hasPrivilege(privileges, "reports", "view")) return <Navigate to="/" replace />;
 

@@ -26,6 +26,9 @@ export default function PrivilegeManager() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    dispatch(refreshDirectory());
+  }, [dispatch]);
 
   useEffect(() => {
     setDraft(null);

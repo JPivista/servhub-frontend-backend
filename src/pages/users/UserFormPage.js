@@ -10,7 +10,6 @@ import GlassPanel, { PageIntro } from "../../components/ui/GlassPanel";
 import RolePrivilegePicker from "../../features/users/RolePrivilegePicker";
 import { fieldClass, ghostBtn, primaryBtn } from "../../components/ui/formStyles";
 import { generatePassword } from "../../utils/password";
-import defaultDepartments from "../../data/departments.json";
 
 export default function UserForm() {
   const { id } = useParams();
@@ -35,7 +34,7 @@ export default function UserForm() {
   const [privilegeMode, setPrivilegeMode] = useState("default");
   const [newDepartment, setNewDepartment] = useState("");
   const [quota, setQuota] = useState(null);
-  const departmentOptions = departments.length ? departments : defaultDepartments;
+  const departmentOptions = departments;
 
   useEffect(() => {
     if (isEdit || isSuperAdmin) return;
@@ -58,11 +57,9 @@ export default function UserForm() {
     (async () => {
       try {
         const data = await api.get("/departments");
-        if (Array.isArray(data.departments) && data.departments.length) {
-          dispatch(setDirectory({ departments: data.departments }));
-        }
-      } catch {
-        dispatch(setDirectory({ departments: defaultDepartments }));
+        dispatch(setDirectory({ departments: data.departments || [] }));
+      } catch (err) {
+        setError(err.message || "Failed to load departments");
       }
     })();
   }, [dispatch]);

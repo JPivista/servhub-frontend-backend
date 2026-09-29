@@ -8,7 +8,6 @@ import { hasPrivilege } from "../../constants/privileges";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import GlassPanel from "../../components/ui/GlassPanel";
 import { fieldClass, ghostBtn, primaryBtn } from "../../components/ui/formStyles";
-import defaultDepartments from "../../data/departments.json";
 import PrivilegeAccordion from "../privileges/PrivilegeAccordion";
 
 const HIDDEN_MODULES = ["roles", "privileges", "departments", "audits"];
@@ -33,19 +32,22 @@ export default function DepartmentManager() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     dispatch(refreshDirectory());
     (async () => {
       try {
         const data = await api.get("/departments");
-        if (Array.isArray(data.departments) && data.departments.length) {
-          const list = data.departments.filter((item) => item.key !== "testing");
-          dispatch(setDirectory({ departments: list }));
-        }
-      } catch {
-        if (!departments.length) dispatch(setDirectory({ departments: defaultDepartments }));
+        if (cancelled) return;
+        const list = (data.departments || []).filter((item) => item.key !== "testing");
+        dispatch(setDirectory({ departments: list }));
+      } catch (err) {
+        if (!cancelled) setError(err.message || "Failed to load departments");
       }
     })();
-  }, [dispatch, departments.length]);
+    return () => {
+      cancelled = true;
+    };
+  }, [dispatch]);
 
   useEffect(() => {
     if (selectedKey === "testing" || (selectedKey && !departments.some((item) => item.key === selectedKey))) {

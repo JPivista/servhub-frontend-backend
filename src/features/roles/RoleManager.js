@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { hasPrivilege } from "../../constants/privileges";
 import { refreshDirectory, syncCurrentUser } from "../../store/authSlice";
@@ -20,6 +20,10 @@ export default function RoleManager() {
   const canDelete = hasPrivilege(privileges, "roles", "delete");
   const [form, setForm] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
+
+  useEffect(() => {
+    dispatch(refreshDirectory());
+  }, [dispatch]);
 
   const openCreate = () => setForm({ name: "", key: "" });
 

@@ -94,7 +94,7 @@ export default function RecordManager({ moduleKey, config }) {
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">{config.title}</h2>
-          <p className="text-sm text-white/50">{rows.length} records</p>
+          <p className="text-sm text-white/50">{rows.length} records from the server</p>
         </div>
         {canCreate ? (
           <button type="button" className={primaryBtn} onClick={() => setForm(blank)}>

@@ -63,14 +63,14 @@ export default function Dashboard() {
       label: "Pending Approval",
       to: "/approvals",
       icon: "check",
-      value: mrs.filter((item) => item.status.includes("Pending")).length,
+      value: mrs.filter((item) => String(item.status || "").includes("Pending")).length,
     },
     {
       key: "purchase_orders",
       label: "Purchase Orders",
       to: "/purchase-orders",
       icon: "cart",
-      value: mrs.filter((item) => item.status.includes("PO") || item.status === "In Delivery").length,
+      value: mrs.filter((item) => String(item.status || "").includes("PO") || item.status === "In Delivery").length,
     },
     {
       key: "deliveries",

@@ -1,18 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit";
-import rolesJson from "../data/roles.json";
-import privilegesJson from "../data/rolePrivileges.json";
-import departmentsJson from "../data/departments.json";
-import { defaultCollections } from "../features/records/records";
 import { loadJson, saveJson } from "../services/storage";
 
-const STORAGE_KEY = "servhub_directory_v5";
+const SETTINGS_KEY = "servhub_settings_v1";
 const defaultSettings = { orgName: "ServHub", theme: "day" };
 
-function load() {
-  return loadJson(STORAGE_KEY);
+function loadSettings() {
+  return { ...defaultSettings, ...(loadJson(SETTINGS_KEY) || {}) };
 }
-
-const saved = load();
 
 function uniqueUsers(users) {
   const seen = new Set();
@@ -24,27 +18,16 @@ function uniqueUsers(users) {
   });
 }
 
-function persist(state) {
-  saveJson(STORAGE_KEY, {
-    roles: state.roles,
-    departments: state.departments,
-    rolePrivileges: state.rolePrivileges,
-    departmentPrivileges: state.departmentPrivileges,
-    collections: state.collections,
-    settings: state.settings,
-  });
-}
-
 const directorySlice = createSlice({
   name: "directory",
   initialState: {
     users: [],
-    roles: saved?.roles || rolesJson,
-    departments: saved?.departments?.length ? saved.departments : departmentsJson,
-    rolePrivileges: saved?.rolePrivileges || privilegesJson,
-    departmentPrivileges: saved?.departmentPrivileges || {},
-    collections: { ...defaultCollections, ...(saved?.collections || {}) },
-    settings: { ...defaultSettings, ...(saved?.settings || {}) },
+    roles: [],
+    departments: [],
+    rolePrivileges: {},
+    departmentPrivileges: {},
+    collections: {},
+    settings: loadSettings(),
   },
   reducers: {
     setDirectory(state, action) {
@@ -52,9 +35,10 @@ const directorySlice = createSlice({
       if (Array.isArray(users)) state.users = uniqueUsers(users);
       if (roles) state.roles = roles;
       if (rolePrivileges) state.rolePrivileges = rolePrivileges;
-      if (Array.isArray(departments)) state.departments = departments;
+      if (Array.isArray(departments)) {
+        state.departments = departments.filter((item) => item.key !== "testing");
+      }
       if (departmentPrivileges) state.departmentPrivileges = departmentPrivileges;
-      persist(state);
     },
     saveUser(state, action) {
       const user = action.payload;
@@ -62,11 +46,9 @@ const directorySlice = createSlice({
       if (index >= 0) state.users[index] = user;
       else state.users.push(user);
       state.users = uniqueUsers(state.users);
-      persist(state);
     },
     deleteUser(state, action) {
       state.users = state.users.filter((item) => item.id !== action.payload);
-      persist(state);
     },
     saveRole(state, action) {
       const { role, previousKey, privileges } = action.payload;
@@ -75,8 +57,7 @@ const directorySlice = createSlice({
         const oldKey = previousKey || state.roles[index].key;
         state.roles[index] = role;
         if (oldKey !== role.key) {
-          state.rolePrivileges[role.key] =
-            privileges || state.rolePrivileges[oldKey] || {};
+          state.rolePrivileges[role.key] = privileges || state.rolePrivileges[oldKey] || {};
           delete state.rolePrivileges[oldKey];
           state.users.forEach((user) => {
             if (user.role === oldKey) user.role = role.key;
@@ -88,14 +69,12 @@ const directorySlice = createSlice({
         state.roles.push(role);
         state.rolePrivileges[role.key] = privileges || { dashboard: ["view"] };
       }
-      persist(state);
     },
     deleteRole(state, action) {
       const role = state.roles.find((item) => item.id === action.payload);
       if (!role) return;
       state.roles = state.roles.filter((item) => item.id !== role.id);
       delete state.rolePrivileges[role.key];
-      persist(state);
     },
     saveRecord(state, action) {
       const { collection, record } = action.payload;
@@ -104,19 +83,15 @@ const directorySlice = createSlice({
       const index = list.findIndex((item) => item.id === record.id);
       if (index >= 0) list[index] = record;
       else list.push(record);
-      persist(state);
     },
     deleteRecord(state, action) {
       const { collection, id } = action.payload;
       if (!state.collections[collection]) return;
-      state.collections[collection] = state.collections[collection].filter(
-        (item) => item.id !== id
-      );
-      persist(state);
+      state.collections[collection] = state.collections[collection].filter((item) => item.id !== id);
     },
     saveSettings(state, action) {
       state.settings = { ...state.settings, ...action.payload };
-      persist(state);
+      saveJson(SETTINGS_KEY, state.settings);
     },
   },
 });

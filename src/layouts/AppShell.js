@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Outlet } from "react-router-dom";
 import { getNavItems } from "../constants/nav";
+import { api } from "../services/api";
+import { refreshDirectory } from "../store/authSlice";
+import { setMaterialRequests } from "../store/workflowSlice";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 
@@ -15,6 +18,7 @@ function resolveTheme(theme) {
 }
 
 export default function AppShell() {
+  const dispatch = useDispatch();
   const [navVisible, setNavVisible] = useState(true);
   const [pinned, setPinned] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -22,6 +26,26 @@ export default function AppShell() {
   const roleKey = useSelector((state) => state.auth.role?.key);
   const themePreference = useSelector((state) => state.directory.settings?.theme || "day");
   const [resolved, setResolved] = useState(() => resolveTheme(themePreference));
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        await dispatch(refreshDirectory());
+      } catch {
+        // directory stays empty until the next successful fetch
+      }
+      try {
+        const response = await api.get("/material-requests");
+        if (!cancelled) dispatch(setMaterialRequests(response.materialRequests || []));
+      } catch {
+        if (!cancelled) dispatch(setMaterialRequests([]));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [dispatch]);
 
   useEffect(() => {
     const apply = () => setResolved(resolveTheme(themePreference));

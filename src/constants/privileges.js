@@ -1,5 +1,3 @@
-import rolePrivileges from "../data/rolePrivileges.json";
-
 export const PRIVILEGE_ACTIONS = [
   "view",
   "create",
@@ -10,7 +8,7 @@ export const PRIVILEGE_ACTIONS = [
   "reject",
 ];
 
-export function resolvePrivileges(user, catalog = rolePrivileges, departmentCatalog = {}) {
+export function resolvePrivileges(user, catalog = {}, departmentCatalog = {}) {
   const privileges = JSON.parse(
     JSON.stringify({
       ...(catalog[user.role] || {}),
