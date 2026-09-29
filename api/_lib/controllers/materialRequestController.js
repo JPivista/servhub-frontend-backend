@@ -62,8 +62,8 @@ async function resolveCreatedFor(createdForId, departmentKey) {
     department: departmentKey,
     active: { $ne: false },
   });
-  if (!requester) {
-    const error = new Error("Select a user from this department");
+  if (!requester || requester.isRequestor === false) {
+    const error = new Error("Select a requestor from this department");
     error.statusCode = 400;
     throw error;
   }
@@ -114,8 +114,8 @@ async function resolveCatalogLines(products, departmentKey, projectName) {
   const ids = [...new Set(summary.products.map((item) => item.productId))];
   const materials = await Material.find({
     productId: { $in: ids },
-    department: departmentKey,
     active: { $ne: false },
+    $or: [{ department: departmentKey }, { shared: true }],
   });
   const byId = new Map(materials.map((item) => [item.productId, item]));
   const lines = summary.products.map((item) => {
@@ -125,7 +125,7 @@ async function resolveCatalogLines(products, departmentKey, projectName) {
       error.statusCode = 400;
       throw error;
     }
-    if (!sameProject(material.project, project)) {
+    if (!material.shared && !sameProject(material.project, project)) {
       const error = new Error(`Product ${item.productId} is not listed for this project`);
       error.statusCode = 400;
       throw error;
@@ -241,6 +241,7 @@ const listAssignees = async (req, res) => {
     const requesters = await User.find({
       department,
       active: { $ne: false },
+      isRequestor: { $ne: false },
     })
       .sort({ name: 1 })
       .select("name");

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import GlassPanel, { PageIntro } from "../../components/ui/GlassPanel";
@@ -17,6 +17,23 @@ const emptyProduct = () => ({
   unit: "",
   amount: "",
 });
+
+function ShakeBox({ active, shakeKey, className = "", children }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!active || !ref.current) return undefined;
+    const el = ref.current;
+    el.classList.remove("field-shake");
+    void el.offsetWidth;
+    el.classList.add("field-shake");
+    return undefined;
+  }, [active, shakeKey]);
+  return (
+    <div ref={ref} className={className}>
+      {children}
+    </div>
+  );
+}
 
 function sameProject(left, right) {
   return String(left || "").trim().toLowerCase() === String(right || "").trim().toLowerCase();
@@ -50,6 +67,8 @@ export default function MaterialRequestFormPage() {
   const canCreate = hasPrivilege(privileges, "material_requests", "create");
   const canEdit = hasPrivilege(privileges, "material_requests", "edit");
   const [error, setError] = useState("");
+  const [invalid, setInvalid] = useState({});
+  const [shakeKey, setShakeKey] = useState(0);
   const [loading, setLoading] = useState(false);
   const [departments, setDepartments] = useState([]);
   const [materials, setMaterials] = useState([]);
@@ -153,8 +172,9 @@ export default function MaterialRequestFormPage() {
     projectOptions.unshift(form.project);
   }
 
+  const hasStationery = materials.some((item) => item.shared === true);
   const departmentOptions = departments.filter((department) => {
-    if (!form.project) return true;
+    if (!form.project || hasStationery) return true;
     return materials.some(
       (item) => item.department === department.key && sameProject(item.project, form.project)
     );
@@ -165,10 +185,22 @@ export default function MaterialRequestFormPage() {
   }
 
   const matchingMaterials = materials.filter(
-    (item) => item.department === form.department && sameProject(item.project, form.project)
+    (item) =>
+      item.shared === true ||
+      (item.department === form.department && sameProject(item.project, form.project))
   );
 
+  const clearInvalid = (...keys) => {
+    setInvalid((prev) => {
+      if (!keys.some((key) => prev[key])) return prev;
+      const next = { ...prev };
+      keys.forEach((key) => delete next[key]);
+      return next;
+    });
+  };
+
   const updateProduct = (index, patch) => {
+    clearInvalid(`product-${index}`, `qty-${index}`);
     setForm((prev) => {
       const products = [...prev.products];
       products[index] = { ...products[index], ...patch };
@@ -177,6 +209,7 @@ export default function MaterialRequestFormPage() {
   };
 
   const chooseMaterial = (index, productId) => {
+    clearInvalid(`product-${index}`);
     const material = matchingMaterials.find((item) => item.productId === productId);
     setForm((prev) => {
       const products = prev.products.map((item, itemIndex) =>
@@ -205,6 +238,7 @@ export default function MaterialRequestFormPage() {
     }));
 
   const onProjectChange = (project) => {
+    clearInvalid("project");
     setForm((prev) => {
       const departmentStillValid = materials.some(
         (item) => item.department === prev.department && sameProject(item.project, project)
@@ -220,6 +254,7 @@ export default function MaterialRequestFormPage() {
   };
 
   const onDepartmentChange = (department) => {
+    clearInvalid("department");
     setForm((prev) => ({
       ...prev,
       department,
@@ -230,7 +265,6 @@ export default function MaterialRequestFormPage() {
 
   const saveRequest = async (status) => {
     setError("");
-    setLoading(true);
     const products = form.products
       .filter((item) => item.productId && item.quantity)
       .map((item) => ({
@@ -241,31 +275,35 @@ export default function MaterialRequestFormPage() {
         unit: item.unit || "",
         amount: Number(item.amount) || 0,
       }));
-    if (!form.project) {
-      setError("Select a project");
-      setLoading(false);
-      return;
-    }
-    if (!form.department) {
-      setError("Select a department");
-      setLoading(false);
-      return;
-    }
-    if (!form.createdForId) {
-      setError("Select who this request is created for");
-      setLoading(false);
-      return;
-    }
-    if (status === "Requested" && !manager) {
-      setError("No manager is appointed for this department on this project");
-      setLoading(false);
-      return;
-    }
+    const nextInvalid = {};
+    if (!form.project) nextInvalid.project = true;
+    if (!form.department) nextInvalid.department = true;
+    if (!form.createdForId) nextInvalid.createdFor = true;
+    if (!String(form.justification || "").trim()) nextInvalid.justification = true;
+    if (status === "Requested" && form.project && form.department && !manager) nextInvalid.manager = true;
     if (!products.length) {
-      setError("Select a product and quantity for at least one row");
+      const anyStarted = form.products.some((item) => item.productId || item.quantity);
+      form.products.forEach((item, index) => {
+        const started = Boolean(item.productId || item.quantity);
+        if (!started && (index !== 0 || anyStarted)) return;
+        if (!item.productId) nextInvalid[`product-${index}`] = true;
+        if (!item.quantity) nextInvalid[`qty-${index}`] = true;
+      });
+    } else {
+      form.products.forEach((item, index) => {
+        if (item.productId && !item.quantity) nextInvalid[`qty-${index}`] = true;
+        if (!item.productId && item.quantity) nextInvalid[`product-${index}`] = true;
+      });
+    }
+    if (Object.keys(nextInvalid).length) {
+      setInvalid(nextInvalid);
+      setError("");
+      setShakeKey((value) => value + 1);
       setLoading(false);
       return;
     }
+    setInvalid({});
+    setLoading(true);
     try {
       const payload = {
         project: form.project,
@@ -299,8 +337,8 @@ export default function MaterialRequestFormPage() {
         title={isEdit ? `Edit ${id}` : "New Material Request Form"}
       />
       <GlassPanel as="article" className="p-5 sm:p-6">
-        {error ? <p className="mb-4 text-sm text-red-200">{error}</p> : null}
-        <form className="space-y-5" onSubmit={onSaveDraft}>
+        {error ? <p className="mb-4 text-sm text-red-600">{error}</p> : null}
+        <form className="space-y-5" noValidate onSubmit={onSaveDraft}>
           <div className="grid gap-3 sm:grid-cols-2">
             {isEdit ? (
               <label className="block sm:col-span-2">
@@ -315,6 +353,8 @@ export default function MaterialRequestFormPage() {
                 onChange={onProjectChange}
                 placeholder="Select project"
                 required
+                invalid={Boolean(invalid.project)}
+                shakeKey={shakeKey}
                 options={projectOptions.map((project) => ({ value: project, label: project }))}
               />
             </label>
@@ -325,6 +365,8 @@ export default function MaterialRequestFormPage() {
                 onChange={onDepartmentChange}
                 placeholder="Select department"
                 required
+                invalid={Boolean(invalid.department)}
+                shakeKey={shakeKey}
                 options={departmentOptions.map((item) => ({ value: item.key, label: item.name }))}
               />
             </label>
@@ -332,7 +374,12 @@ export default function MaterialRequestFormPage() {
               <span className="mb-1.5 block text-sm text-white/70">Created for</span>
               <SearchSelect
                 value={form.createdForId}
-                onChange={(createdForId) => setForm({ ...form, createdForId })}
+                onChange={(createdForId) => {
+                  clearInvalid("createdFor");
+                  setForm({ ...form, createdForId });
+                }}
+                invalid={Boolean(invalid.createdFor)}
+                shakeKey={shakeKey}
                 placeholder={
                   !form.department
                     ? "Select department first"
@@ -355,8 +402,9 @@ export default function MaterialRequestFormPage() {
             </label>
             <label className="block">
               <span className="mb-1.5 block text-sm text-white/70">Assigned manager</span>
+              <ShakeBox active={Boolean(invalid.manager)} shakeKey={shakeKey}>
               <input
-                className={fieldClass}
+                className={`${fieldClass} ${invalid.manager ? "field-invalid" : ""}`}
                 value={
                   manager?.name ||
                   (form.project && form.department
@@ -365,16 +413,22 @@ export default function MaterialRequestFormPage() {
                 }
                 disabled
               />
+              </ShakeBox>
             </label>
             <label className="block sm:col-span-2">
               <span className="mb-1.5 block text-sm text-white/70">Description</span>
+              <ShakeBox active={Boolean(invalid.justification)} shakeKey={shakeKey}>
               <input
-                className={fieldClass}
+                className={`${fieldClass} ${invalid.justification ? "field-invalid" : ""}`}
                 value={form.justification}
-                onChange={(e) => setForm({ ...form, justification: e.target.value })}
+                onChange={(e) => {
+                  clearInvalid("justification");
+                  setForm({ ...form, justification: e.target.value });
+                }}
                 placeholder="Why is this needed?"
                 required
               />
+              </ShakeBox>
             </label>
           </div>
 
@@ -382,7 +436,7 @@ export default function MaterialRequestFormPage() {
             <div>
               <p className="text-sm font-semibold">Materials</p>
               <p className="text-xs text-white/50">
-                Choose a project and department. Search by product id or material name. The next row is added when either is filled.
+                Department products stay with that department. Stationery items are shown to every user.
               </p>
             </div>
 
@@ -426,6 +480,8 @@ export default function MaterialRequestFormPage() {
                         : "Select project and department first"
                     }
                     required={productRequired}
+                    invalid={Boolean(invalid[`product-${index}`])}
+                    shakeKey={shakeKey}
                     disabled={!form.project || !form.department}
                     options={productOptions.map((item) => ({
                       value: item.productId,
@@ -438,19 +494,31 @@ export default function MaterialRequestFormPage() {
                     onChange={(productId) => chooseMaterial(index, productId)}
                     placeholder="Material name"
                     required={productRequired}
+                    invalid={Boolean(invalid[`product-${index}`])}
+                    shakeKey={shakeKey}
                     disabled={!form.project || !form.department}
                     options={productOptions.map((item) => ({
                       value: item.productId,
                       label: item.name || item.productId,
                     }))}
                   />
+                  <ShakeBox
+                    active={Boolean(invalid[`qty-${index}`])}
+                    shakeKey={shakeKey}
+                    className="sm:col-span-2"
+                  >
                   <input
-                    className={`${fieldClass} sm:col-span-2`}
+                    className={`${fieldClass} ${invalid[`qty-${index}`] ? "field-invalid" : ""}`}
                     placeholder="Qty"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={product.quantity}
-                    onChange={(e) => updateProduct(index, { quantity: e.target.value })}
+                    onChange={(e) =>
+                      updateProduct(index, { quantity: e.target.value.replace(/\D/g, "") })
+                    }
                     required={Boolean(product.productId)}
                   />
+                  </ShakeBox>
                   <input
                     type="number"
                     className={`${fieldClass} sm:col-span-2`}

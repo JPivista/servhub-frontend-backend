@@ -12,6 +12,7 @@ function toPublic(item) {
     project: item.project || "",
     department: item.department,
     unit: item.unit || "",
+    shared: item.shared === true,
     active: item.active !== false,
   };
 }
@@ -150,6 +151,7 @@ const saveMaterial = async (req, res) => {
         project,
         department,
         unit: String(unit || "").trim(),
+        shared: req.body.shared === true,
         active: true,
       });
       await logAudit({
@@ -169,6 +171,7 @@ const saveMaterial = async (req, res) => {
     material.project = project;
     material.department = department;
     material.unit = String(unit || "").trim();
+    material.shared = req.body.shared === true;
     material.active = true;
     await material.save();
 

@@ -7,6 +7,8 @@ const materialSchema = new mongoose.Schema(
     project: { type: String, required: true, trim: true },
     department: { type: String, required: true, trim: true, lowercase: true },
     unit: { type: String, trim: true, default: "" },
+    /** Stationery is listed for every department. Other products stay on their department. */
+    shared: { type: Boolean, default: false },
     active: { type: Boolean, default: true },
   },
   { timestamps: true }

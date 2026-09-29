@@ -81,6 +81,7 @@ const createUser = async (req, res) => {
         deny: req.user.role === "super_admin" ? privileges?.deny || [] : [],
       },
       userCreateLimit: targetRole === "admin" ? nextLimit : DEFAULT_USER_CREATE_LIMIT,
+      isRequestor: req.body.isRequestor !== false,
       createdBy: req.user.id,
     });
 
@@ -118,7 +119,7 @@ const updateUser = async (req, res) => {
       return res.status(403).json({ message: "You can only update users in your department" });
     }
 
-    const { name, email, password, role, department, privileges, userCreateLimit, active } = req.body;
+    const { name, email, password, role, department, privileges, userCreateLimit, active, isRequestor } = req.body;
     if (role && role !== user.role && !canAssignRole(req.user, role)) {
       return res.status(403).json({ message: "You cannot assign this role" });
     }
@@ -126,6 +127,7 @@ const updateUser = async (req, res) => {
     if (name) user.name = name;
     if (email) user.email = String(email).toLowerCase().trim();
     if (role) user.role = role;
+    if (isRequestor !== undefined) user.isRequestor = isRequestor !== false;
     if (req.user.role === "super_admin" && department !== undefined) {
       user.department = String(department || "").toLowerCase().trim();
     }

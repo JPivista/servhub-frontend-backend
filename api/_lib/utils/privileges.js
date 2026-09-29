@@ -91,6 +91,7 @@ function toPublicUser(user) {
     email: user.email,
     role: user.role,
     department: user.department || "",
+    isRequestor: user.isRequestor !== false,
     privileges: user.privileges || { allow: [], deny: [] },
     userCreateLimit: user.role === "super_admin" ? null : Number(user.userCreateLimit ?? 5),
     createdBy: user.createdBy ? user.createdBy.toString() : "",

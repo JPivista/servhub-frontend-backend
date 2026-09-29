@@ -54,6 +54,11 @@ export default function MaterialsListPage() {
       },
       { accessorKey: "unit", header: "Unit" },
       {
+        accessorKey: "shared",
+        header: "Stationery",
+        cell: (info) => (info.getValue() ? "All users" : "Department"),
+      },
+      {
         id: "actions",
         header: "Actions",
         cell: ({ row }) => (

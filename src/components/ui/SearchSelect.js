@@ -8,6 +8,8 @@ export default function SearchSelect({
   placeholder = "Select",
   disabled = false,
   required = false,
+  invalid = false,
+  shakeKey = 0,
   className = "",
   emptyText = "No matches",
 }) {
@@ -16,6 +18,15 @@ export default function SearchSelect({
   const [highlight, setHighlight] = useState(0);
   const rootRef = useRef(null);
   const listId = `${useId()}-options`;
+
+  useEffect(() => {
+    if (!invalid || !rootRef.current) return undefined;
+    const el = rootRef.current;
+    el.classList.remove("field-shake");
+    void el.offsetWidth;
+    el.classList.add("field-shake");
+    return undefined;
+  }, [invalid, shakeKey]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -69,7 +80,7 @@ export default function SearchSelect({
   return (
     <div ref={rootRef} className={`relative ${open ? "z-30" : ""} ${className}`}>
       <input
-        className={`${fieldClass} !pr-10`}
+        className={`${fieldClass} !pr-10 ${invalid ? "field-invalid" : ""}`}
         value={open ? query : selectedLabel}
         placeholder={placeholder}
         disabled={disabled}
