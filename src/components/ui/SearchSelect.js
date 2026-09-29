@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { fieldClass } from "./formStyles";
 
 export default function SearchSelect({
@@ -15,6 +15,7 @@ export default function SearchSelect({
   const [query, setQuery] = useState("");
   const [highlight, setHighlight] = useState(0);
   const rootRef = useRef(null);
+  const listId = `${useId()}-options`;
 
   useEffect(() => {
     if (!open) return undefined;
@@ -75,6 +76,7 @@ export default function SearchSelect({
         required={required && !value}
         role="combobox"
         aria-expanded={open}
+        aria-controls={listId}
         aria-autocomplete="list"
         autoComplete="off"
         onFocus={(event) => {
@@ -103,7 +105,11 @@ export default function SearchSelect({
         ▾
       </button>
       {open && !disabled ? (
-        <ul className="absolute z-30 mt-1 max-h-56 w-full overflow-auto rounded-2xl border border-white/20 bg-white py-1 text-sm text-brand-navy shadow-lg">
+        <ul
+          id={listId}
+          role="listbox"
+          className="absolute z-30 mt-1 max-h-56 w-full overflow-auto rounded-2xl border border-white/20 bg-white py-1 text-sm text-brand-navy shadow-lg"
+        >
           {filtered.length ? (
             filtered.map((item, index) => (
               <li key={item.value}>

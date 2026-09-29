@@ -85,7 +85,7 @@ export default function MaterialsPage() {
     return () => {
       cancelled = true;
     };
-  }, [form.department]);
+  }, [form.department, form.project]);
 
   if (isEdit && !canEdit) return <Navigate to="/materials" replace />;
   if (!isEdit && !canCreate) return <Navigate to="/materials" replace />;

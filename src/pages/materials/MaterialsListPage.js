@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { Navigate, useNavigate } from "react-router-dom";
 import ActionMenu from "../../components/ui/ActionMenu";
@@ -23,7 +23,10 @@ export default function MaterialsListPage() {
   const [pendingDelete, setPendingDelete] = useState(null);
   const [error, setError] = useState("");
 
-  const departmentName = (key) => departments.find((item) => item.key === key)?.name || key || "—";
+  const departmentName = useCallback(
+    (key) => departments.find((item) => item.key === key)?.name || key || "—",
+    [departments]
+  );
 
   const load = async () => {
     const [materialResponse, departmentResponse] = await Promise.all([
@@ -71,7 +74,7 @@ export default function MaterialsListPage() {
         ),
       },
     ],
-    [canDelete, canEdit, departments, navigate]
+    [canDelete, canEdit, departmentName, navigate]
   );
 
   if (!canView) return <Navigate to={homePathForRole(roleKey)} replace />;

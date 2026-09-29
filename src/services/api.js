@@ -9,7 +9,7 @@ export function setToken(token) {
   else localStorage.removeItem(TOKEN_KEY);
 }
 
-const API_URL = (process.env.REACT_APP_API_URL || "http://localhost:7002").replace(/\/$/, "");
+const API_URL = (process.env.REACT_APP_API_URL || "").replace(/\/$/, "");
 
 async function request(path, options = {}) {
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
