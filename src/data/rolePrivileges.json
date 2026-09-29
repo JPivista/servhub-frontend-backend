@@ -12,6 +12,7 @@
     "roles": ["view", "create", "edit", "delete"],
     "privileges": ["view", "create", "edit", "delete"],
     "departments": ["view", "create", "edit", "delete"],
+    "materials": ["view", "create", "edit", "delete"],
     "delete_requests": ["view", "approve", "reject"],
     "reports": ["view", "export"],
     "audits": ["view"],
@@ -74,6 +75,10 @@
     "dashboard": ["view"],
     "material_requests": ["view", "edit"],
     "deliveries": ["view", "edit"],
+    "settings": ["view", "edit"]
+  },
+  "back_office": {
+    "materials": ["view", "create", "edit", "delete"],
     "settings": ["view", "edit"]
   }
 }

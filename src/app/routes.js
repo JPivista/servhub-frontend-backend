@@ -17,6 +17,8 @@ import UsersPage from "../pages/users/UsersPage";
 import MaterialFlowPage from "../pages/workflow/MaterialFlowPage";
 import MaterialRequestDetailPage from "../pages/workflow/MaterialRequestDetailPage";
 import MaterialRequestFormPage from "../pages/workflow/MaterialRequestFormPage";
+import MaterialsListPage from "../pages/materials/MaterialsListPage";
+import MaterialsPage from "../pages/materials/MaterialsPage";
 import { homePathForRole } from "../constants/nav";
 import { useSelector } from "react-redux";
 
@@ -25,6 +27,7 @@ function HomeRedirect() {
   if (roleKey === "user" || roleKey === "requestor" || roleKey === "requester") {
     return <Navigate to="/material-requests" replace />;
   }
+  if (roleKey === "back_office") return <Navigate to="/materials" replace />;
   return <DashboardPage />;
 }
 
@@ -96,6 +99,9 @@ export default function AppRoutes() {
           <Route path="/users/:id/edit" element={<UserFormPage />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/departments" element={<DepartmentsPage />} />
+          <Route path="/materials/new" element={<MaterialsPage />} />
+          <Route path="/materials/:id/edit" element={<MaterialsPage />} />
+          <Route path="/materials" element={<MaterialsListPage />} />
           <Route path="/roles" element={<RolesPage />} />
           <Route path="/privileges" element={<PrivilegesPage />} />
           <Route path="/delete-requests" element={<DeleteRequestsPage />} />

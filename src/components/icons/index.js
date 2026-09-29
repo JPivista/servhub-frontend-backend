@@ -9,6 +9,11 @@ export const icons = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h10M4 12h16M4 17h10M14 7l3 3-3 3M14 14l3 3-3 3" />
     </svg>
   ),
+  box: (
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.5 8 12 4l8.5 4M3.5 8 12 12m-8.5-4v8L12 20m0-8 8.5-4M12 12v8m8.5-12v8L12 20" />
+    </svg>
+  ),
   clipboard: (
     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5h6M8 4h8v3H8V4Zm-1 3h10v14H7V7Z" />

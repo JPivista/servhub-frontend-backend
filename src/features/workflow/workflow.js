@@ -177,4 +177,5 @@ export const WORKFLOW_ROLE_OPTIONS = [
   { key: "finance", name: "Finance" },
   { key: "supplier", name: "Supplier" },
   { key: "in_charge", name: "Department Incharge" },
+  { key: "back_office", name: "Back Office" },
 ];
