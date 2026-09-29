@@ -7,6 +7,8 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true, minlength: 6 },
     role: { type: String, required: true, default: "user" },
     department: { type: String, trim: true, lowercase: true, default: "" },
+    /** Every user can be chosen as a requestor until this is turned off. */
+    isRequestor: { type: Boolean, default: true },
     privileges: {
       allow: { type: [String], default: [] },
       deny: { type: [String], default: [] },

@@ -41,6 +41,7 @@ export const MATERIAL_FLOW_KEYS = [
 
 const SUPER_ADMIN_ORDER = [
   "dashboard",
+  "attendance",
   "material_flow",
   "users",
   "departments",
@@ -51,10 +52,10 @@ const SUPER_ADMIN_ORDER = [
   "audits",
 ];
 
-const REQUESTOR_MENU_KEYS = ["material_requests", "settings"];
+const REQUESTOR_MENU_KEYS = ["material_requests", "attendance", "settings"];
 
 function canViewModule(key, privileges, roleKey) {
-  if (key === "attendance") return false;
+  if (key === "attendance") return true;
   if (roleKey === "super_admin" && ["departments", "roles", "privileges", "audits", "materials"].includes(key)) {
     return true;
   }

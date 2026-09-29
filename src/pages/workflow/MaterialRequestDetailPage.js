@@ -5,12 +5,13 @@ import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import GlassPanel, { PageIntro } from "../../components/ui/GlassPanel";
 import ProcessTracker from "../../features/workflow/ProcessTracker";
 import StatusBadge from "../../components/ui/StatusBadge";
-import { fieldClass, ghostBtn } from "../../components/ui/formStyles";
+import { fieldClass, ghostBtn, primaryBtn } from "../../components/ui/formStyles";
 import {
   deleteMaterialRequest,
   saveMaterialRequest,
 } from "../../store/workflowSlice";
 import { hasPrivilege } from "../../constants/privileges";
+import { downloadMaterialRequestPdf } from "../../features/workflow/materialRequestPdf";
 import { actionClass, actionsFor, isEditableStatus } from "../../features/workflow/workflow";
 import { api } from "../../services/api";
 
@@ -116,11 +117,29 @@ export default function MaterialRequestDetail() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <PageIntro kicker="Requirement detail" title={record.id} />
-        <Link to="/material-requests" className={ghostBtn}>
+      <div>
+        <Link to="/material-requests" className={`${ghostBtn} mb-3`}>
           Back to list
         </Link>
+        <p className="text-sm font-medium text-brand-teal">Requirement detail</p>
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-3xl font-semibold tracking-tight">{record.id}</h1>
+          <button
+            type="button"
+            className={primaryBtn}
+            onClick={() =>
+              downloadMaterialRequestPdf({
+                record,
+                departmentName:
+                  departments.find((item) => item.key === record.department)?.name ||
+                  record.department ||
+                  "—",
+              }).catch((err) => setError(err.message || "Could not create PDF"))
+            }
+          >
+            Download PDF
+          </button>
+        </div>
       </div>
 
       <GlassPanel className="p-6">

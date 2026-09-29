@@ -14,6 +14,7 @@ import {
   updateMaterialStatus,
 } from "../../store/workflowSlice";
 import { hasPrivilege } from "../../constants/privileges";
+import { downloadMaterialRequestPdf } from "../../features/workflow/materialRequestPdf";
 import { actionsFor, isEditableStatus, materialRequestHref, statusesForStage } from "../../features/workflow/workflow";
 import { homePathForRole } from "../../constants/nav";
 import { api } from "../../services/api";
@@ -55,6 +56,8 @@ export default function MaterialFlow({
       )
     : rows;
   const data = statuses ? scopedRows.filter((item) => statuses.includes(item.status)) : scopedRows;
+  const departmentLabel = (record) =>
+    departments.find((item) => item.key === record.department)?.name || record.department || "—";
 
   useEffect(() => {
     let cancelled = false;
@@ -96,10 +99,14 @@ export default function MaterialFlow({
         cell: (info) =>
           departments.find((item) => item.key === info.getValue())?.name || info.getValue() || "—",
       },
-      { accessorKey: "createdBy", header: "Created by" },
+      ...(moduleKey === "material_requests"
+        ? []
+        : [
+            { accessorKey: "createdBy", header: "Created by" },
+            { accessorKey: "quantity", header: "Products" },
+          ]),
       { accessorKey: "requestedBy", header: "Created for" },
       { accessorKey: "assignedTo", header: "Assigned manager" },
-      { accessorKey: "quantity", header: "Products" },
       {
         accessorKey: "status",
         header: "Status",
@@ -128,6 +135,19 @@ export default function MaterialFlow({
                   label: "View details",
                   onClick: () => navigate(materialRequestHref(record.id)),
                 },
+                moduleKey === "material_requests"
+                  ? null
+                  : {
+                      label: "Download PDF",
+                      onClick: () =>
+                        downloadMaterialRequestPdf({
+                          record,
+                          departmentName:
+                            departments.find((item) => item.key === record.department)?.name ||
+                            record.department ||
+                            "—",
+                        }).catch((err) => setError(err.message || "Could not create PDF")),
+                    },
                 canEdit && isEditableStatus(record.status)
                   ? {
                       label: "Edit",
@@ -160,7 +180,7 @@ export default function MaterialFlow({
         },
       },
     ],
-    [canDelete, canEdit, departments, isRequestor, navigate, roleKey, showPayment]
+    [canDelete, canEdit, departments, isRequestor, moduleKey, navigate, roleKey, setError, showPayment]
   );
 
   if (!hasPrivilege(privileges, moduleKey, "view")) {
@@ -190,17 +210,36 @@ export default function MaterialFlow({
       ) : null}
 
       <GlassPanel className="flex min-h-0 flex-1 flex-col p-5">
-        <div className="mb-4 flex shrink-0 items-center justify-between gap-3">
+        <div className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-white/50">{data.length} records in this stage</p>
-          {canCreate ? (
-            <button
-              type="button"
-              className={ghostBtn}
-              onClick={() => navigate("/material-requests/new")}
-            >
-              Open form
-            </button>
-          ) : null}
+          <div className="flex flex-wrap gap-2">
+            {moduleKey === "material_requests" ? null : (
+              <button
+                type="button"
+                className={ghostBtn}
+                disabled={!data.length}
+                onClick={() =>
+                  downloadMaterialRequestPdf(
+                    data.map((record) => ({
+                      record,
+                      departmentName: departmentLabel(record),
+                    }))
+                  ).catch((err) => setError(err.message || "Could not create PDF"))
+                }
+              >
+                Download PDF
+              </button>
+            )}
+            {canCreate ? (
+              <button
+                type="button"
+                className={ghostBtn}
+                onClick={() => navigate("/material-requests/new")}
+              >
+                Open form
+              </button>
+            ) : null}
+          </div>
         </div>
         {error ? <p className="mb-3 shrink-0 text-sm text-red-200">{error}</p> : null}
         <div className="min-h-0 flex-1">

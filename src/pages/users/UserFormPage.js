@@ -75,6 +75,7 @@ export default function UserForm() {
         email: existing.email,
         password: "",
         role: existing.role || "requestor",
+        isRequestor: existing.isRequestor !== false,
         department: existing.department || actorDepartment || departmentOptions[0]?.key || "",
         privileges: extras,
         userCreateLimit: existing.userCreateLimit ?? 5,
@@ -93,6 +94,7 @@ export default function UserForm() {
         email: "",
         password: generatePassword(),
         role,
+        isRequestor: true,
         department,
         privileges: { allow: [], deny: [] },
         userCreateLimit: 5,
@@ -113,6 +115,7 @@ export default function UserForm() {
         name: form.name,
         email: form.email,
         role: form.role,
+        isRequestor: form.isRequestor !== false,
         department: isSuperAdmin ? form.department : actorDepartment,
         privileges:
           isSuperAdmin && privilegeMode === "custom"
@@ -212,6 +215,14 @@ export default function UserForm() {
                 </option>
               ))}
             </select>
+          </label>
+          <label className="flex items-center gap-2 self-end pb-2 text-sm text-white/80">
+            <input
+              type="checkbox"
+              checked={form.isRequestor !== false}
+              onChange={(e) => setForm({ ...form, isRequestor: e.target.checked })}
+            />
+            Requestor
           </label>
           <div className="sm:col-span-2">
             <label className="block">

@@ -6,7 +6,7 @@ import { approveBtn, fieldClass, ghostBtn } from "../../components/ui/formStyles
 import { hasPrivilege } from "../../constants/privileges";
 import { api } from "../../services/api";
 
-const emptyRow = () => ({ productId: "", name: "", unit: "" });
+const emptyRow = () => ({ productId: "", name: "", unit: "", shared: false });
 
 export default function MaterialsPage() {
   const { id } = useParams();
@@ -53,7 +53,14 @@ export default function MaterialsPage() {
             project: match.project || "",
             department: match.department || "",
             managerId: "",
-            rows: [{ productId: match.productId || "", name: match.name || "", unit: match.unit || "" }],
+            rows: [
+              {
+                productId: match.productId || "",
+                name: match.name || "",
+                unit: match.unit || "",
+                shared: match.shared === true,
+              },
+            ],
           });
         }
       } catch (err) {
@@ -133,6 +140,7 @@ export default function MaterialsPage() {
           project: form.project.trim(),
           department: form.department,
           unit: row.unit.trim(),
+          shared: row.shared === true,
         });
       } else {
         for (const row of rows) {
@@ -142,6 +150,7 @@ export default function MaterialsPage() {
             project: form.project.trim(),
             department: form.department,
             unit: row.unit.trim(),
+            shared: row.shared === true,
           });
         }
       }
@@ -236,23 +245,24 @@ export default function MaterialsPage() {
             </div>
 
             <div className="hidden gap-2 text-[11px] uppercase tracking-[0.14em] text-white/45 sm:grid sm:grid-cols-12">
-              <span className="sm:col-span-3">P. id</span>
-              <span className="sm:col-span-5">Name</span>
+              <span className="sm:col-span-2">P. id</span>
+              <span className="sm:col-span-3">Name</span>
               <span className="sm:col-span-2">Unit</span>
+              <span className="sm:col-span-3">Stationery</span>
               <span className="sm:col-span-2 text-center">Actions</span>
             </div>
 
             {form.rows.map((row, index) => (
               <div key={`material-${index}`} className="grid gap-2 sm:grid-cols-12 sm:items-center">
                 <input
-                  className={`${fieldClass} sm:col-span-3`}
+                  className={`${fieldClass} sm:col-span-2`}
                   placeholder="Product id"
                   value={row.productId}
                   onChange={(e) => updateRow(index, { productId: e.target.value })}
                   required
                 />
                 <input
-                  className={`${fieldClass} sm:col-span-5`}
+                  className={`${fieldClass} sm:col-span-3`}
                   placeholder="Name"
                   value={row.name}
                   onChange={(e) => updateRow(index, { name: e.target.value })}
@@ -264,6 +274,14 @@ export default function MaterialsPage() {
                   value={row.unit}
                   onChange={(e) => updateRow(index, { unit: e.target.value })}
                 />
+                <label className="flex items-center gap-2 text-sm text-white/75 sm:col-span-3">
+                  <input
+                    type="checkbox"
+                    checked={row.shared === true}
+                    onChange={(e) => updateRow(index, { shared: e.target.checked })}
+                  />
+                  Show to all users
+                </label>
                 <div className="flex items-center justify-center gap-2 sm:col-span-2">
                   <button
                     type="button"

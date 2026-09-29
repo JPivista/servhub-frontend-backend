@@ -8,6 +8,7 @@ for (const envFile of [
   dotenv.config({ path: envFile, override: false });
 }
 
+const https = require("https");
 const express = require("express");
 const cors = require("cors");
 const dbConnect = require("./config/dbConnect");
@@ -45,8 +46,27 @@ function ensureDb() {
   return dbReady;
 }
 
+const LOGO_URL = "https://wf.servhub.io/brand/servhub-v101-logo.png";
+
+app.get("/api/v1/brand/logo", (req, res) => {
+  https
+    .get(LOGO_URL, (upstream) => {
+      if (upstream.statusCode !== 200) {
+        res.status(502).end();
+        upstream.resume();
+        return;
+      }
+      res.setHeader("Content-Type", upstream.headers["content-type"] || "image/png");
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      upstream.pipe(res);
+    })
+    .on("error", () => {
+      if (!res.headersSent) res.status(502).end();
+    });
+});
+
 app.use(async (req, res, next) => {
-  if (!req.path.startsWith("/api")) return next();
+  if (!req.path.startsWith("/api") || req.path === "/api/v1/brand/logo") return next();
   try {
     await ensureDb();
     next();

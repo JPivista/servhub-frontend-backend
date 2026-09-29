@@ -18,6 +18,8 @@ export default function AuditsPage() {
   const [loading, setLoading] = useState(true);
   const [moduleFilter, setModuleFilter] = useState("all");
   const [actionFilter, setActionFilter] = useState("all");
+  const [personQuery, setPersonQuery] = useState("");
+  const [appliedPerson, setAppliedPerson] = useState("");
   const [grantAdminId, setGrantAdminId] = useState("");
   const [grantLimit, setGrantLimit] = useState(10);
   const [grantMessage, setGrantMessage] = useState("");
@@ -34,9 +36,10 @@ export default function AuditsPage() {
     setError("");
     try {
       const params = new URLSearchParams();
-      params.set("limit", "500");
+      params.set("limit", appliedPerson ? "2000" : "500");
       if (moduleFilter && moduleFilter !== "all") params.set("module", moduleFilter);
       if (actionFilter && actionFilter !== "all") params.set("action", actionFilter);
+      if (appliedPerson) params.set("q", appliedPerson);
       const data = await api.get(`/audits?${params.toString()}`);
       setAudits(data.audits || []);
     } catch (err) {
@@ -50,7 +53,7 @@ export default function AuditsPage() {
     if (!canView) return;
     loadAudits();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canView, moduleFilter, actionFilter]);
+  }, [canView, moduleFilter, actionFilter, appliedPerson]);
 
   const columns = useMemo(
     () => [
@@ -58,7 +61,8 @@ export default function AuditsPage() {
       { accessorKey: "action", header: "Action" },
       { accessorKey: "module", header: "Module" },
       { accessorKey: "summary", header: "Summary" },
-      { accessorKey: "actorName", header: "Actor" },
+      { accessorKey: "actorName", header: "Name" },
+      { accessorKey: "actorEmail", header: "Email" },
       { accessorKey: "actorRole", header: "Role" },
       { accessorKey: "targetId", header: "Target" },
     ],
@@ -102,6 +106,21 @@ export default function AuditsPage() {
 
       <GlassPanel className="flex min-h-0 flex-1 flex-col p-5">
         <div className="mb-3 flex flex-wrap items-end gap-2">
+          <label className="block min-w-[16rem] flex-1">
+            <span className="mb-1 block text-xs text-white/55">Name or email</span>
+            <input
+              className={fieldClass}
+              value={personQuery}
+              placeholder="Search by name or mail id"
+              onChange={(e) => setPersonQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") setAppliedPerson(personQuery.trim());
+              }}
+            />
+          </label>
+          <button type="button" className={primaryBtn} onClick={() => setAppliedPerson(personQuery.trim())}>
+            Search
+          </button>
           <label className="block">
             <span className="mb-1 block text-xs text-white/55">Module</span>
             <select
@@ -139,6 +158,18 @@ export default function AuditsPage() {
           <button type="button" className={ghostBtn} onClick={loadAudits}>
             Refresh
           </button>
+          {appliedPerson ? (
+            <button
+              type="button"
+              className={ghostBtn}
+              onClick={() => {
+                setPersonQuery("");
+                setAppliedPerson("");
+              }}
+            >
+              Clear
+            </button>
+          ) : null}
         </div>
         {error ? <p className="mb-3 text-sm text-red-200">{error}</p> : null}
         {loading ? (
@@ -147,7 +178,7 @@ export default function AuditsPage() {
           <DataTable
             columns={columns}
             data={audits}
-            searchPlaceholder="Search all audits"
+            searchPlaceholder="Filter these results"
             pageSize={12}
             fillHeight
           />

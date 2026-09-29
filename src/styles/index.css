@@ -361,3 +361,32 @@ body {
   background: rgba(255, 255, 255, 0.1);
 }
 
+@keyframes field-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+
+.field-invalid {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.28) !important;
+  background-color: #fff5f5 !important;
+}
+
+.field-shake {
+  animation: field-shake 0.42s ease;
+}
+
