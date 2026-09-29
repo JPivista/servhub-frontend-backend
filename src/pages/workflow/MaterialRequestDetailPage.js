@@ -200,7 +200,7 @@ export default function MaterialRequestDetail() {
               <thead>
                 <tr className="text-[11px] uppercase tracking-[0.16em] text-white/45">
                   <th className="px-4 py-3">P. id</th>
-                  <th className="px-4 py-3">Description</th>
+                  <th className="px-4 py-3">Material name</th>
                   <th className="px-4 py-3">Qty</th>
                   <th className="px-4 py-3">Amount</th>
                 </tr>
@@ -209,7 +209,7 @@ export default function MaterialRequestDetail() {
                 {record.products.map((item, index) => (
                   <tr key={`${item.productId || item.name}-${index}`} className="border-t border-white/8">
                     <td className="px-4 py-3">{item.productId || "—"}</td>
-                    <td className="px-4 py-3">{item.description || item.name || "—"}</td>
+                    <td className="px-4 py-3">{item.name || "—"}</td>
                     <td className="px-4 py-3">
                       {item.quantity}
                       {item.unit ? ` ${item.unit}` : ""}

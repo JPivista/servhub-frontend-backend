@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import GlassPanel, { PageIntro } from "../../components/ui/GlassPanel";
 import { approveBtn, fieldClass, ghostBtn } from "../../components/ui/formStyles";
+import SearchSelect from "../../components/ui/SearchSelect";
 import { hasPrivilege } from "../../constants/privileges";
 import { api } from "../../services/api";
 import { saveMaterialRequest } from "../../store/workflowSlice";
@@ -39,7 +40,10 @@ export default function MaterialRequestFormPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const privileges = useSelector((state) => state.auth.privileges);
-  const userDepartment = useSelector((state) => state.auth.user?.department || "");
+  const currentUser = useSelector((state) => state.auth.user);
+  const userDepartment = currentUser?.department || "";
+  const currentUserId = currentUser?.id || "";
+  const currentUserName = currentUser?.name || "";
   const existing = useSelector((state) =>
     state.workflow.materialRequests.find((item) => item.id === id)
   );
@@ -54,7 +58,7 @@ export default function MaterialRequestFormPage() {
   const [form, setForm] = useState({
     project: "",
     department: userDepartment,
-    createdForId: "",
+    createdForId: currentUserId,
     justification: "",
     products: [emptyProduct()],
     status: "Draft",
@@ -88,8 +92,14 @@ export default function MaterialRequestFormPage() {
           `/material-requests/assignees?department=${encodeURIComponent(form.department)}&project=${encodeURIComponent(form.project)}`
         );
         if (cancelled) return;
-        setRequesters(response.requesters || []);
+        const people = response.requesters || [];
+        setRequesters(people);
         setManager(response.manager || null);
+        setForm((prev) => {
+          if (prev.createdForId && people.some((item) => item.id === prev.createdForId)) return prev;
+          const self = people.find((item) => item.id === currentUserId);
+          return { ...prev, createdForId: self?.id || "" };
+        });
       } catch (err) {
         if (!cancelled) setError(err.message || "Failed to load requesters");
       }
@@ -97,7 +107,7 @@ export default function MaterialRequestFormPage() {
     return () => {
       cancelled = true;
     };
-  }, [form.department, form.project]);
+  }, [currentUserId, form.department, form.project]);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -166,6 +176,26 @@ export default function MaterialRequestFormPage() {
     });
   };
 
+  const chooseMaterial = (index, productId) => {
+    const material = matchingMaterials.find((item) => item.productId === productId);
+    setForm((prev) => {
+      const products = prev.products.map((item, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...item,
+              productId: material?.productId || "",
+              name: material?.name || "",
+              unit: material?.unit || "",
+            }
+          : item
+      );
+      if (material && products.every((item) => item.productId)) {
+        products.push(emptyProduct());
+      }
+      return { ...prev, products };
+    });
+  };
+
   const clearProductChoices = (products) =>
     products.map((item) => ({
       ...emptyProduct(),
@@ -183,7 +213,7 @@ export default function MaterialRequestFormPage() {
         ...prev,
         project,
         department: departmentStillValid ? prev.department : "",
-        createdForId: "",
+        createdForId: currentUserId,
         products: clearProductChoices(prev.products),
       };
     });
@@ -193,7 +223,7 @@ export default function MaterialRequestFormPage() {
     setForm((prev) => ({
       ...prev,
       department,
-      createdForId: "",
+      createdForId: currentUserId,
       products: clearProductChoices(prev.products),
     }));
   };
@@ -272,71 +302,56 @@ export default function MaterialRequestFormPage() {
         {error ? <p className="mb-4 text-sm text-red-200">{error}</p> : null}
         <form className="space-y-5" onSubmit={onSaveDraft}>
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block sm:col-span-2">
-              <span className="mb-1.5 block text-sm text-white/70">MR No.</span>
-              <input
-                className={fieldClass}
-                value={isEdit ? id : "Will be generated automatically"}
-                disabled
+            {isEdit ? (
+              <label className="block sm:col-span-2">
+                <span className="mb-1.5 block text-sm text-white/70">MR No.</span>
+                <input className={fieldClass} value={id} disabled />
+              </label>
+            ) : null}
+            <label className="block">
+              <span className="mb-1.5 block text-sm text-white/70">Project</span>
+              <SearchSelect
+                value={form.project}
+                onChange={onProjectChange}
+                placeholder="Select project"
+                required
+                options={projectOptions.map((project) => ({ value: project, label: project }))}
               />
             </label>
             <label className="block">
-              <span className="mb-1.5 block text-sm text-white/70">Project</span>
-              <select
-                className={fieldClass}
-                value={form.project}
-                onChange={(e) => onProjectChange(e.target.value)}
-                required
-              >
-                <option value="">Select project</option>
-                {projectOptions.map((project) => (
-                  <option key={project} value={project}>
-                    {project}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block">
               <span className="mb-1.5 block text-sm text-white/70">Department</span>
-              <select
-                className={fieldClass}
+              <SearchSelect
                 value={form.department}
-                onChange={(e) => onDepartmentChange(e.target.value)}
+                onChange={onDepartmentChange}
+                placeholder="Select department"
                 required
-              >
-                <option value="">Select department</option>
-                {departmentOptions.map((item) => (
-                  <option key={item.key} value={item.key}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
+                options={departmentOptions.map((item) => ({ value: item.key, label: item.name }))}
+              />
             </label>
             <label className="block">
               <span className="mb-1.5 block text-sm text-white/70">Created for</span>
-              <select
-                className={fieldClass}
+              <SearchSelect
                 value={form.createdForId}
-                onChange={(e) => setForm({ ...form, createdForId: e.target.value })}
-                required
-                disabled={!form.department}
-              >
-                <option value="">
-                  {!form.department
+                onChange={(createdForId) => setForm({ ...form, createdForId })}
+                placeholder={
+                  !form.department
                     ? "Select department first"
                     : !form.project
                       ? "Select a project first"
-                      : "Select a person"}
-                </option>
-                {form.createdForId && !requesters.some((item) => item.id === form.createdForId) ? (
-                  <option value={form.createdForId}>Saved requester</option>
-                ) : null}
-                {requesters.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
+                      : "Select a person"
+                }
+                required
+                disabled={!form.department}
+                options={[
+                  ...(form.createdForId && !requesters.some((item) => item.id === form.createdForId)
+                    ? [{
+                        value: form.createdForId,
+                        label: form.createdForId === currentUserId ? currentUserName : "Saved requester",
+                      }]
+                    : []),
+                  ...requesters.map((item) => ({ value: item.id, label: item.name })),
+                ]}
+              />
             </label>
             <label className="block">
               <span className="mb-1.5 block text-sm text-white/70">Assigned manager</span>
@@ -352,7 +367,7 @@ export default function MaterialRequestFormPage() {
               />
             </label>
             <label className="block sm:col-span-2">
-              <span className="mb-1.5 block text-sm text-white/70">Justification</span>
+              <span className="mb-1.5 block text-sm text-white/70">Description</span>
               <input
                 className={fieldClass}
                 value={form.justification}
@@ -367,13 +382,13 @@ export default function MaterialRequestFormPage() {
             <div>
               <p className="text-sm font-semibold">Materials</p>
               <p className="text-xs text-white/50">
-                Choose a project and department. Product ids are the materials saved for that pair. Description is entered on this request.
+                Choose a project and department. Search by product id or material name. The next row is added when either is filled.
               </p>
             </div>
 
             <div className="hidden gap-2 text-[11px] uppercase tracking-[0.14em] text-white/45 sm:grid sm:grid-cols-12">
               <span className="sm:col-span-3">P. id</span>
-              <span className="sm:col-span-3">Description</span>
+              <span className="sm:col-span-3">Material name</span>
               <span className="sm:col-span-2">Qty</span>
               <span className="sm:col-span-2">Amount</span>
               <span className="sm:col-span-2 text-center">Actions</span>
@@ -389,51 +404,52 @@ export default function MaterialRequestFormPage() {
               const options = matchingMaterials.filter(
                 (item) => item.productId === product.productId || !taken.has(item.productId)
               );
+              const productOptions = [
+                ...(product.productId && !options.some((item) => item.productId === product.productId)
+                  ? [{ productId: product.productId, name: product.name || product.productId }]
+                  : []),
+                ...options,
+              ];
+              const anotherRowChosen = form.products.some(
+                (item, itemIndex) => itemIndex !== index && item.productId
+              );
+              const productRequired = Boolean(product.productId) || !anotherRowChosen;
               return (
                 <div key={`product-${index}`} className="grid gap-2 sm:grid-cols-12 sm:items-center">
-                  <select
-                    className={`${fieldClass} sm:col-span-3`}
+                  <SearchSelect
+                    className="sm:col-span-3"
                     value={product.productId}
-                    onChange={(e) => {
-                      const material = matchingMaterials.find((item) => item.productId === e.target.value);
-                      updateProduct(index, {
-                        productId: material?.productId || "",
-                        name: material?.name || "",
-                        unit: material?.unit || "",
-                      });
-                    }}
-                    required
-                    disabled={!form.project || !form.department}
-                  >
-                    <option value="">
-                      {form.project && form.department
+                    onChange={(productId) => chooseMaterial(index, productId)}
+                    placeholder={
+                      form.project && form.department
                         ? "Select product"
-                        : "Select project and department first"}
-                    </option>
-                    {product.productId && !options.some((item) => item.productId === product.productId) ? (
-                      <option value={product.productId}>
-                        {product.productId}
-                        {product.name ? ` — ${product.name}` : ""}
-                      </option>
-                    ) : null}
-                    {options.map((item) => (
-                      <option key={item.productId} value={item.productId}>
-                        {item.productId} — {item.name}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    className={`${fieldClass} sm:col-span-3`}
-                    placeholder="Description"
-                    value={product.description}
-                    onChange={(e) => updateProduct(index, { description: e.target.value })}
+                        : "Select project and department first"
+                    }
+                    required={productRequired}
+                    disabled={!form.project || !form.department}
+                    options={productOptions.map((item) => ({
+                      value: item.productId,
+                      label: item.name ? `${item.productId} — ${item.name}` : item.productId,
+                    }))}
+                  />
+                  <SearchSelect
+                    className="sm:col-span-3"
+                    value={product.productId}
+                    onChange={(productId) => chooseMaterial(index, productId)}
+                    placeholder="Material name"
+                    required={productRequired}
+                    disabled={!form.project || !form.department}
+                    options={productOptions.map((item) => ({
+                      value: item.productId,
+                      label: item.name || item.productId,
+                    }))}
                   />
                   <input
                     className={`${fieldClass} sm:col-span-2`}
                     placeholder="Qty"
                     value={product.quantity}
                     onChange={(e) => updateProduct(index, { quantity: e.target.value })}
-                    required
+                    required={Boolean(product.productId)}
                   />
                   <input
                     type="number"
