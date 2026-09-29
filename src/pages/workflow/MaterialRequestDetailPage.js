@@ -16,8 +16,11 @@ import { api } from "../../services/api";
 
 const fields = [
   { key: "id", label: "MR No." },
-  { key: "project", label: "Project / Department" },
-  { key: "requestedBy", label: "Requested by" },
+  { key: "project", label: "Project" },
+  { key: "department", label: "Department" },
+  { key: "createdBy", label: "Created by" },
+  { key: "requestedBy", label: "Created for" },
+  { key: "assignedTo", label: "Assigned manager" },
   { key: "quantity", label: "Quantity" },
   { key: "justification", label: "Justification" },
   { key: "amount", label: "Amount" },
@@ -44,6 +47,7 @@ export default function MaterialRequestDetail() {
   const record = useSelector((state) =>
     state.workflow.materialRequests.find((item) => item.id === id)
   );
+  const departments = useSelector((state) => state.directory.departments);
   const canView = modules.some((key) => hasPrivilege(privileges, key, "view"));
   const canEdit = modules.some((key) => hasPrivilege(privileges, key, "edit"));
   const canDelete = modules.some((key) => hasPrivilege(privileges, key, "delete"));
@@ -78,7 +82,8 @@ export default function MaterialRequestDetail() {
     ((roleKey === "user" || roleKey === "requestor" || roleKey === "requester") &&
       record &&
       record.requestedById &&
-      record.requestedById !== currentUser?.id)
+      record.requestedById !== currentUser?.id &&
+      record.createdById !== currentUser?.id)
   ) {
     return <Navigate to="/material-requests" replace />;
   }
@@ -172,7 +177,11 @@ export default function MaterialRequestDetail() {
               <p className="mt-1 text-sm font-medium">
                 {field.key === "amount"
                   ? Number(record.amount || 0).toLocaleString()
-                  : record[field.key] || "—"}
+                  : field.key === "department"
+                    ? departments.find((item) => item.key === record.department)?.name ||
+                      record.department ||
+                      "—"
+                    : record[field.key] || "—"}
               </p>
             </div>
           ))}
@@ -190,18 +199,21 @@ export default function MaterialRequestDetail() {
             <table className="w-full min-w-[520px] text-left text-sm">
               <thead>
                 <tr className="text-[11px] uppercase tracking-[0.16em] text-white/45">
-                  <th className="px-4 py-3">Product</th>
+                  <th className="px-4 py-3">P. id</th>
+                  <th className="px-4 py-3">Material name</th>
                   <th className="px-4 py-3">Qty</th>
-                  <th className="px-4 py-3">Unit</th>
                   <th className="px-4 py-3">Amount</th>
                 </tr>
               </thead>
               <tbody>
                 {record.products.map((item, index) => (
-                  <tr key={`${item.name}-${index}`} className="border-t border-white/8">
-                    <td className="px-4 py-3">{item.name}</td>
-                    <td className="px-4 py-3">{item.quantity}</td>
-                    <td className="px-4 py-3">{item.unit || "—"}</td>
+                  <tr key={`${item.productId || item.name}-${index}`} className="border-t border-white/8">
+                    <td className="px-4 py-3">{item.productId || "—"}</td>
+                    <td className="px-4 py-3">{item.name || "—"}</td>
+                    <td className="px-4 py-3">
+                      {item.quantity}
+                      {item.unit ? ` ${item.unit}` : ""}
+                    </td>
                     <td className="px-4 py-3">{Number(item.amount || 0).toLocaleString()}</td>
                   </tr>
                 ))}

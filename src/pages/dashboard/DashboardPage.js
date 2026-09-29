@@ -29,6 +29,7 @@ export default function Dashboard() {
   const users = useSelector((state) => state.directory.users);
   const rolePrivileges = useSelector((state) => state.directory.rolePrivileges);
   const mrs = useSelector((state) => state.workflow.materialRequests);
+  const departments = useSelector((state) => state.directory.departments);
   const roleKey = role?.key;
   const isSuperAdmin = roleKey === "super_admin";
   const items = flattenNavItems(getNavItems(privileges, roleKey)).filter((item) => item.to !== "/");
@@ -126,12 +127,19 @@ export default function Dashboard() {
           </Link>
         ),
       },
-      { accessorKey: "project", header: "Project / Department" },
-      { accessorKey: "requestedBy", header: "Requested By" },
+      { accessorKey: "project", header: "Project" },
+      {
+        accessorKey: "department",
+        header: "Department",
+        cell: (info) =>
+          departments.find((item) => item.key === info.getValue())?.name || info.getValue() || "—",
+      },
+      { accessorKey: "createdBy", header: "Created by" },
+      { accessorKey: "requestedBy", header: "Created for" },
       { accessorKey: "status", header: "Status", cell: (info) => <StatusBadge value={info.getValue()} /> },
       { accessorKey: "date", header: "Date" },
     ],
-    []
+    [departments]
   );
 
   return (

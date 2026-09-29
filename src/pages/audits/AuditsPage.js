@@ -114,6 +114,7 @@ export default function AuditsPage() {
               <option value="users">Users</option>
               <option value="departments">Departments</option>
               <option value="material_requests">Material requests</option>
+              <option value="materials">Materials</option>
             </select>
           </label>
           <label className="block">

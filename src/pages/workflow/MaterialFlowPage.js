@@ -31,6 +31,7 @@ export default function MaterialFlow({
   const roleKey = useSelector((state) => state.auth.role?.key || state.auth.user?.role);
   const currentUser = useSelector((state) => state.auth.user);
   const rows = useSelector((state) => state.workflow.materialRequests);
+  const departments = useSelector((state) => state.directory.departments);
   const isRequestor = roleKey === "user" || roleKey === "requestor" || roleKey === "requester";
   const canCreate =
     allowCreate &&
@@ -49,6 +50,7 @@ export default function MaterialFlow({
     ? rows.filter(
         (item) =>
           item.requestedById === currentUser?.id ||
+          item.createdById === currentUser?.id ||
           (!item.requestedById && item.requestedBy === currentUser?.name)
       )
     : rows;
@@ -87,8 +89,16 @@ export default function MaterialFlow({
           </Link>
         ),
       },
-      { accessorKey: "project", header: "Project / Department" },
-      { accessorKey: "requestedBy", header: "Requested By" },
+      { accessorKey: "project", header: "Project" },
+      {
+        accessorKey: "department",
+        header: "Department",
+        cell: (info) =>
+          departments.find((item) => item.key === info.getValue())?.name || info.getValue() || "—",
+      },
+      { accessorKey: "createdBy", header: "Created by" },
+      { accessorKey: "requestedBy", header: "Created for" },
+      { accessorKey: "assignedTo", header: "Assigned manager" },
       { accessorKey: "quantity", header: "Products" },
       {
         accessorKey: "status",
@@ -150,7 +160,7 @@ export default function MaterialFlow({
         },
       },
     ],
-    [canDelete, canEdit, isRequestor, navigate, roleKey, showPayment]
+    [canDelete, canEdit, departments, isRequestor, navigate, roleKey, showPayment]
   );
 
   if (!hasPrivilege(privileges, moduleKey, "view")) {

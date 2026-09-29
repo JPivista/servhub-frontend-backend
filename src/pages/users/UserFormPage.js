@@ -9,7 +9,7 @@ import { assignableRoles, usersHomeHref } from "../../features/users/userRoutes"
 import GlassPanel, { PageIntro } from "../../components/ui/GlassPanel";
 import RolePrivilegePicker from "../../features/users/RolePrivilegePicker";
 import { fieldClass, ghostBtn, primaryBtn } from "../../components/ui/formStyles";
-import { generatePassword } from "utils/password";
+import { generatePassword } from "../../utils/password";
 import defaultDepartments from "../../data/departments.json";
 
 export default function UserForm() {

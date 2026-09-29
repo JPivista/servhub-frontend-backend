@@ -13,6 +13,7 @@ const ROLE_TITLES = {
   finance: "Finance",
   supplier: "Suppliers",
   in_charge: "Department Incharge",
+  back_office: "Back Office",
   user: "Requestors (legacy)",
 };
 
