@@ -1,5 +1,12 @@
 const path = require("path");
-require("dotenv").config({ path: path.resolve(__dirname, "../../.env") });
+const dotenv = require("dotenv");
+
+for (const envFile of [
+  path.resolve(process.cwd(), ".env"),
+  path.resolve(__dirname, "../../.env"),
+]) {
+  dotenv.config({ path: envFile, override: false });
+}
 
 const express = require("express");
 const cors = require("cors");
@@ -102,7 +109,7 @@ app.use((err, req, res, next) => {
   res.status(status).json({ message: err.message || "Server error" });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 7001;
 
 if (!process.env.VERCEL) {
   ensureDb()

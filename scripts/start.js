@@ -5,7 +5,7 @@ require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
 
 const root = path.resolve(__dirname, "..");
 const isProd = process.env.NODE_ENV === "production";
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 7001;
 const webPort = process.env.WEB_DEV_PORT || 3001;
 
 if (isProd) {
